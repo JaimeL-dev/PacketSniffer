@@ -1,0 +1,79 @@
+cmake_minimum_required(VERSION 3.16)
+
+project(pruebaCMAKE VERSION 0.1 LANGUAGES CXX)
+
+set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTORCC ON)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets Charts)
+
+
+
+
+# Define las fuentes del proyecto
+set(PROJECT_SOURCES
+        main.cpp
+        ventana1Adaptadores.cpp
+        ventana1Adaptadores.h
+        ventana1Adaptadores.ui
+)
+
+# Configuración para librerías de pcap
+set(PCAP_INCLUDE_DIR "C:/Npcap-SDK/Include") # Ruta donde está pcap.h
+set(PCAP_LIBRARIES "C:/Npcap-SDK/Lib/x64/wpcap.lib" "C:/Npcap-SDK/Lib/x64/Packet.lib" "Ws2_32.lib") # Rutas a las bibliotecas
+
+# Añadir rutas de inclusión
+include_directories(${PCAP_INCLUDE_DIR})
+
+if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
+    qt_add_executable(pruebaCMAKE
+        MANUAL_FINALIZATION
+        ${PROJECT_SOURCES}
+        ventanacaptura.h ventanacaptura.cpp ventanacaptura.ui
+        hiloCaptura.h hiloCaptura.cpp
+    )
+else()
+    if(ANDROID)
+        add_library(pruebaCMAKE SHARED
+            ${PROJECT_SOURCES}
+        )
+    else()
+        add_executable(pruebaCMAKE
+            ${PROJECT_SOURCES}
+        )
+    endif()
+endif()
+
+# Enlazar bibliotecas de Qt y pcap
+target_link_libraries(pruebaCMAKE PRIVATE Qt${QT_VERSION_MAJOR}::Widgets ${PCAP_LIBRARIES})
+target_link_libraries(pruebaCMAKE PRIVATE Qt${QT_VERSION_MAJOR}::Widgets Qt${QT_VERSION_MAJOR}::Charts)
+
+# Qt para configuraciones específicas
+if(${QT_VERSION} VERSION_LESS 6.1.0)
+  set(BUNDLE_ID_OPTION MACOSX_BUNDLE_GUI_IDENTIFIER com.example.pruebaCMAKE)
+endif()
+set_target_properties(pruebaCMAKE PROPERTIES
+    ${BUNDLE_ID_OPTION}
+    MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
+    MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
+    MACOSX_BUNDLE TRUE
+    WIN32_EXECUTABLE TRUE
+)
+
+include(GNUInstallDirs)
+install(TARGETS pruebaCMAKE
+    BUNDLE DESTINATION .
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
+if(QT_VERSION_MAJOR EQUAL 6)
+    qt_finalize_executable(pruebaCMAKE)
+endif()
+
